@@ -1,51 +1,49 @@
-//obtener chistes de la API al hacer click /DONE
-// guardar en el localStorage
-//BONUS> hacer boton para eliminar chistes
-
-
-
 const fetchJoke = document.getElementById('fetchJoke');
 const jokeList = document.getElementById('jokeList');
-const btnDelete = document.querySelector('btnDelete')
-let jokes = []
+let jokes = JSON.parse(localStorage.getItem('joke')) || [];
+
 
 const getJoke = () => {
     fetch('https://api.chucknorris.io/jokes/random')
-    .then (response => {
-        if (!response.ok) {
-            throw new Error ("la solicitud no fue existosa")
-        } return response.json()
-    }
-    ).then (joke => {
-        const template = `<li><p>${joke.value}</p><button class="btnDelete">Eliminar</button></li>`
-        jokeList.innerHTML += template
-        jokes.push(joke.value)
-        localStorage.setItem("joke", JSON.stringify(jokes))
-        
-    }
-        
-    ).catch ((error) => {
-        console.error('Error al cargar el chiste:', error);
-    }) 
-}
-fetchJoke.addEventListener("click", ()=>{ 
-    getJoke(fetchJoke)
-})
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("La solicitud no fue exitosa");
+            }
+            return response.json();
+        })
+        .then(joke => {
+            if (!jokes.includes(joke.value)) { // Si el chiste no está ya en jokes, 
+                jokes.push(joke.value); // lo añade al array, 
+                localStorage.setItem('joke', JSON.stringify(jokes)); // actualiza el localStorage con el nuevo array 
+                renderJokes(); // y vuelve a renderizar los chistes
+                console.log('Chistes guardados en localStorage:', jokes);
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar el chiste', error);
+        });
+};
 
-window.addEventListener("load", () => {
-    const chistesguardados = JSON.parse(localStorage.getItem('joke'))
-    chistesguardados.forEach(joke => {
-        const template = `<li><p>${joke}</p><button class="btnDelete">Eliminar</button></li>`
-        jokeList.innerHTML += template 
-    })
-    console.log(chistesguardados)
-})
+const deleteJoke = (jokeText) => {
+    jokes = jokes.filter(joke => joke !== jokeText);
+    localStorage.setItem('joke', JSON.stringify(jokes));
+    renderJokes();
+};
 
-console.log(localStorage)
+const renderJokes = () => {
+    jokeList.innerHTML = '';
+    jokes.forEach(joke => {
+        const li = document.createElement('li');
+        li.innerHTML = `<p>${joke}</p><button class="btnDelete">Eliminar</button>`;
+        jokeList.appendChild(li);
 
-btnDelete.addEventListener("click", ()=>{ 
-    localStorage.removeItem("joke")
-    jokeList.innerHTML = ""
-})
+        li.querySelector('.btnDelete').addEventListener('click', () => {
+            deleteJoke(joke);
+        });
+    });
+};
 
+fetchJoke.addEventListener('click', getJoke);
 
+// Renderizar chistes guardados al recargar la página
+window.addEventListener('load', renderJokes);
